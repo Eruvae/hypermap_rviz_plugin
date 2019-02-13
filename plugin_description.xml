@@ -1,0 +1,9 @@
+<library path="lib/libhypermap_rviz_plugin">
+  <class name="hypermap/Hypermap"
+         type="hypermap::HypermapDisplay"
+         base_class_type="rviz::Display">
+    <description>
+      Displays hypermap.
+    </description>
+  </class>
+</library>
