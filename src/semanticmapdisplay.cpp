@@ -42,6 +42,13 @@ SemanticMapDisplay::SemanticMapDisplay() : rviz::Display()
 {
     topic_property_ = new rviz::RosTopicProperty("Topic", "", ros::message_traits::datatype<hypermap_msgs::SemanticMap>(),
                                                  "hypermap_msgs::SemanticMap topic to subscribe to.", this, SLOT(updateTopic()));
+
+    show_polygons_property_ = new rviz::BoolProperty("Show shapes", true, "Display shapes of semantic objects", this);
+    show_labels_property_ = new rviz::BoolProperty("Show labels", true, "Display names of semantic objects", this);
+
+    connect(this, SIGNAL(mapReceived()), this, SLOT(updateVisual()));
+    connect(show_polygons_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
+    connect(show_labels_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
 }
 
 void SemanticMapDisplay::setTopic(const QString &topic, const QString &datatype)
@@ -75,9 +82,10 @@ void SemanticMapDisplay::updateTopic()
     scene_node_->addChild(po);*/
 }
 
-void SemanticMapDisplay::receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& msg)
+void SemanticMapDisplay::updateVisual()
 {
-    current_map_ = *msg;
+    scene_node_->detachAllObjects();
+    scene_node_->removeAndDestroyAllChildren();
 
     /*Ogre::ManualObject *mob = scene_manager_->createManualObject("test");
 
@@ -97,9 +105,9 @@ void SemanticMapDisplay::receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& 
 
     Ogre::Vector3 position;
     Ogre::Quaternion orientation;
-    if(!context_->getFrameManager()->getTransform(msg->header, position, orientation))
+    if(!context_->getFrameManager()->getTransform(current_map_.header.frame_id, ros::Time(0), position, orientation))
     {
-        ROS_DEBUG("Error transforming from frame '%s' to frame '%s'", msg->header.frame_id.c_str(), qPrintable( fixed_frame_ ));
+        ROS_DEBUG("Error transforming from frame '%s' to frame '%s'", current_map_.header.frame_id.c_str(), qPrintable(fixed_frame_));
     }
 
     scene_node_->setPosition(position);
@@ -110,35 +118,52 @@ void SemanticMapDisplay::receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& 
 
     for (const auto &obj : current_map_.objects)
     {
-        std::vector<std::vector<geometry_msgs::Point32>> pg;
-        pg.push_back(obj.shape.points);
-        std::vector<uint32_t> indices = mapbox::earcut(pg);
-        ROS_INFO_STREAM("Inds : " << indices.size());
-        Ogre::ManualObject *mo = scene_manager_->createManualObject();
-        Ogre::ColourValue col(distribution(generator), distribution(generator), distribution(generator));
-        mo->estimateVertexCount(obj.shape.points.size());
-        mo->estimateIndexCount(indices.size());
-        mo->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
-        for (size_t i = 0; i < obj.shape.points.size(); i++)
+        if (show_polygons_property_->getBool())
         {
-            const auto &point = obj.shape.points[i];
-            mo->position(point.x, point.y, 0);
-            mo->colour(col);
-            ROS_INFO_STREAM("Point added: " <<  point.x << point.y);
+            std::vector<std::vector<geometry_msgs::Point32>> pg;
+            pg.push_back(obj.shape.points);
+            std::vector<uint32_t> indices = mapbox::earcut(pg);
+            ROS_INFO_STREAM("Inds : " << indices.size());
+            Ogre::ManualObject *mo = scene_manager_->createManualObject();
+            Ogre::ColourValue col(distribution(generator), distribution(generator), distribution(generator));
+            mo->estimateVertexCount(obj.shape.points.size());
+            mo->estimateIndexCount(indices.size());
+            mo->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+            for (const auto &point : obj.shape.points)
+            {
+                mo->position(point.x, point.y, 0);
+                mo->colour(col);
+                ROS_INFO_STREAM("Point added: " <<  point.x << point.y);
+            }
+            for (uint32_t ind : indices)
+            {
+                mo->index(ind);
+            }
+            mo->end();
+            scene_node_->attachObject(mo);
         }
-        for (uint32_t ind : indices)
-        {
-            mo->index(ind);
-        }
-        mo->end();
-        scene_node_->attachObject(mo);
 
-        hypermap::MovableText *mo_txt = new hypermap::MovableText(obj.name, "Liberation Sans", 0.3);
-        mo_txt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
-        mo_txt->setGlobalTranslation(Ogre::Vector3(obj.shape.points[0].x, obj.shape.points[0].y, 0));
-        mo_txt->showOnTop();
-        scene_node_->attachObject(mo_txt);
+        if (show_labels_property_->getBool())
+        {
+            hypermap::MovableText *mo_txt = new hypermap::MovableText(obj.name, "Liberation Sans", 0.3);
+            mo_txt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
+            mo_txt->setGlobalTranslation(orientation * Ogre::Vector3(obj.position.x, obj.position.y, 0));
+            mo_txt->showOnTop();
+            scene_node_->attachObject(mo_txt);
+        }
     }
+}
+
+void SemanticMapDisplay::fixedFrameChanged()
+{
+    updateVisual();
+}
+
+void SemanticMapDisplay::receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& msg)
+{
+    current_map_ = *msg;
+
+    Q_EMIT mapReceived();
 }
 
 }
