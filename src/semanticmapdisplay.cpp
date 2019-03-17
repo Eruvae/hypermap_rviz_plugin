@@ -4,8 +4,12 @@
 #include <Ogre.h>
 #include <rviz/display_context.h>
 #include <rviz/frame_manager.h>
+//#include <rviz/view_manager.h>
+//#include <rviz/tool_manager.h>
 #include "geometry_msgs/Point32.h"
 #include "earcut.hpp"
+
+#include "movable_text.h"
 
 namespace mapbox {
 namespace util {
@@ -86,6 +90,11 @@ void SemanticMapDisplay::receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& 
 
     scene_node_->attachObject(mob);*/
 
+    /*hypermap::MovableText *testTxt = new hypermap::MovableText("test text", "Liberation Sans", 0.3);
+    testTxt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
+    testTxt->setGlobalTranslation(Ogre::Vector3(3, 4, 5));
+    scene_node_->attachObject(testTxt);*/
+
     Ogre::Vector3 position;
     Ogre::Quaternion orientation;
     if(!context_->getFrameManager()->getTransform(msg->header, position, orientation))
@@ -105,7 +114,7 @@ void SemanticMapDisplay::receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& 
         pg.push_back(obj.shape.points);
         std::vector<uint32_t> indices = mapbox::earcut(pg);
         ROS_INFO_STREAM("Inds : " << indices.size());
-        Ogre::ManualObject *mo = scene_manager_->createManualObject(obj.name);
+        Ogre::ManualObject *mo = scene_manager_->createManualObject();
         Ogre::ColourValue col(distribution(generator), distribution(generator), distribution(generator));
         mo->estimateVertexCount(obj.shape.points.size());
         mo->estimateIndexCount(indices.size());
@@ -123,6 +132,12 @@ void SemanticMapDisplay::receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& 
         }
         mo->end();
         scene_node_->attachObject(mo);
+
+        hypermap::MovableText *mo_txt = new hypermap::MovableText(obj.name, "Liberation Sans", 0.3);
+        mo_txt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
+        mo_txt->setGlobalTranslation(Ogre::Vector3(obj.shape.points[0].x, obj.shape.points[0].y, 0));
+        mo_txt->showOnTop();
+        scene_node_->attachObject(mo_txt);
     }
 }
 

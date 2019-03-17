@@ -145,6 +145,8 @@ set(DISPLAY_SOURCE_FILES
   src/hypermapdisplay.cpp
   include/semanticmapdisplay.h
   src/semanticmapdisplay.cpp
+  include/movable_text.h
+  src/movable_text.cpp
   ${MOC_FILES}
 )
 
