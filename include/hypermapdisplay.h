@@ -7,7 +7,8 @@
 #include "rviz/default_plugin/map_display.h"
 #include "hypermap_msgs/HypermapImage.h"
 
-namespace hypermap {
+namespace hypermap
+{
 
 class HypermapDisplay : public rviz::Display
 {

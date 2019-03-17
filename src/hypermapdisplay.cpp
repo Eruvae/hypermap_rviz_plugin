@@ -1,13 +1,15 @@
 #include "hypermapdisplay.h"
+
 #include "hypermap_msgs/HypermapImage.h"
 #include <pluginlib/class_list_macros.h>
 #include <iostream>
 #include <OgreImage.h>
 #include <OgreManualObject.h>
 
-using hypermap::HypermapDisplay;
+PLUGINLIB_EXPORT_CLASS(hypermap::HypermapDisplay, rviz::Display)
 
-PLUGINLIB_EXPORT_CLASS(hypermap::HypermapDisplay,rviz::Display )
+namespace hypermap
+{
 
 HypermapDisplay::HypermapDisplay() : rviz::Display()
 {
@@ -27,6 +29,11 @@ HypermapDisplay::HypermapDisplay() : rviz::Display()
     enable_bg_property_ = new rviz::BoolProperty("Enable background", true, "Display background of map", this);
     //Display *disp = this->createDisplay("ImageDisplay");
     //this->addDisplay(disp);
+}
+
+void HypermapDisplay::setTopic(const QString &topic, const QString &datatype)
+{
+    topic_property_->setString(topic);
 }
 
 void HypermapDisplay::updateTopic()
@@ -81,3 +88,5 @@ void HypermapDisplay::updateMap()
 {
 
 }*/
+
+}
