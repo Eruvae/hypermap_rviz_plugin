@@ -25,6 +25,7 @@ protected Q_SLOTS:
 
 protected:
   void receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& msg);
+  void updateTransform();
 
   rviz::RosTopicProperty *topic_property_;
   rviz::BoolProperty *show_polygons_property_;

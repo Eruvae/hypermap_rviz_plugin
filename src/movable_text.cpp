@@ -569,13 +569,15 @@ void MovableText::getWorldTransforms(Matrix4 *xform) const
   if (this->isVisible() && mpCam)
   {
     Matrix3 rot3x3, scale3x3 = Matrix3::IDENTITY;
+    Matrix3 parentRot3x3;
 
     // store rotation in a matrix
     mpCam->getDerivedOrientation().ToRotationMatrix(rot3x3);
+    mParentNode->_getDerivedOrientation().ToRotationMatrix(parentRot3x3);
 
     // parent node position
     Vector3 ppos = mParentNode->_getDerivedPosition() + mGlobalTranslation;
-    ppos += rot3x3 * mLocalTranslation;
+    ppos += parentRot3x3 * mLocalTranslation;
 
     // apply scale
     scale3x3[0][0] = mParentNode->_getDerivedScale().x / 2;

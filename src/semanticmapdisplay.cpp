@@ -8,6 +8,7 @@
 //#include <rviz/tool_manager.h>
 #include "geometry_msgs/Point32.h"
 #include "earcut.hpp"
+#include "glasbey.h"
 
 #include "movable_text.h"
 
@@ -82,6 +83,19 @@ void SemanticMapDisplay::updateTopic()
     scene_node_->addChild(po);*/
 }
 
+void SemanticMapDisplay::updateTransform()
+{
+    Ogre::Vector3 position;
+    Ogre::Quaternion orientation;
+    if(!context_->getFrameManager()->getTransform(current_map_.header.frame_id, ros::Time(0), position, orientation))
+    {
+        ROS_DEBUG("Error transforming from frame '%s' to frame '%s'", current_map_.header.frame_id.c_str(), qPrintable(fixed_frame_));
+    }
+
+    scene_node_->setPosition(position);
+    scene_node_->setOrientation(orientation);
+}
+
 void SemanticMapDisplay::updateVisual()
 {
     scene_node_->detachAllObjects();
@@ -103,18 +117,12 @@ void SemanticMapDisplay::updateVisual()
     testTxt->setGlobalTranslation(Ogre::Vector3(3, 4, 5));
     scene_node_->attachObject(testTxt);*/
 
-    Ogre::Vector3 position;
-    Ogre::Quaternion orientation;
-    if(!context_->getFrameManager()->getTransform(current_map_.header.frame_id, ros::Time(0), position, orientation))
-    {
-        ROS_DEBUG("Error transforming from frame '%s' to frame '%s'", current_map_.header.frame_id.c_str(), qPrintable(fixed_frame_));
-    }
+    updateTransform();
 
-    scene_node_->setPosition(position);
-    scene_node_->setOrientation(orientation);
+    //std::default_random_engine generator;
+    //std::uniform_real_distribution<float> distribution(0.0,1.0);
 
-    std::default_random_engine generator;
-    std::uniform_real_distribution<float> distribution(0.0,1.0);
+    uint8_t cind = 2;
 
     for (const auto &obj : current_map_.objects)
     {
@@ -125,7 +133,9 @@ void SemanticMapDisplay::updateVisual()
             std::vector<uint32_t> indices = mapbox::earcut(pg);
             ROS_INFO_STREAM("Inds : " << indices.size());
             Ogre::ManualObject *mo = scene_manager_->createManualObject();
-            Ogre::ColourValue col(distribution(generator), distribution(generator), distribution(generator));
+            Ogre::ColourValue col(glasbey[cind][0] / 255.0, glasbey[cind][1] / 255.0, glasbey[cind][2] / 255.0);
+            cind++;
+
             mo->estimateVertexCount(obj.shape.points.size());
             mo->estimateIndexCount(indices.size());
             mo->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
@@ -145,9 +155,11 @@ void SemanticMapDisplay::updateVisual()
 
         if (show_labels_property_->getBool())
         {
-            hypermap::MovableText *mo_txt = new hypermap::MovableText(obj.name, "Liberation Sans", 0.3);
+            //Ogre::ColourValue col(glasbey[cind][0] / 255.0, glasbey[cind][1] / 255.0, glasbey[cind][2] / 255.0);
+            //cind++;
+            hypermap::MovableText *mo_txt = new hypermap::MovableText(obj.name, "Liberation Sans", 0.3/*, col*/);
             mo_txt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
-            mo_txt->setGlobalTranslation(orientation * Ogre::Vector3(obj.position.x, obj.position.y, 0));
+            mo_txt->setLocalTranslation(Ogre::Vector3(obj.position.x, obj.position.y, 0));
             mo_txt->showOnTop();
             scene_node_->attachObject(mo_txt);
         }
@@ -156,7 +168,7 @@ void SemanticMapDisplay::updateVisual()
 
 void SemanticMapDisplay::fixedFrameChanged()
 {
-    updateVisual();
+    updateTransform();
 }
 
 void SemanticMapDisplay::receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& msg)
