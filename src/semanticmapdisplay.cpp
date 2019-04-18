@@ -139,12 +139,25 @@ void SemanticMapDisplay::updateVisual()
             mo->estimateVertexCount(obj.shape.points.size());
             mo->estimateIndexCount(indices.size());
             mo->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+            bool shape_valid = true;
             for (const auto &point : obj.shape.points)
             {
+                if (!std::isfinite(point.x) || !std::isfinite(point.y))
+                {
+                    ROS_WARN_STREAM("Invalid shape detected");
+                    shape_valid = false;
+                    break;
+                }
                 mo->position(point.x, point.y, 0);
                 mo->colour(col);
-                ROS_INFO_STREAM("Point added: " <<  point.x << point.y);
+                ROS_INFO_STREAM("Point added: " <<  point.x << ", " << point.y);
             }
+            if (!shape_valid)
+            {
+                delete mo;
+                continue;
+            }
+
             for (uint32_t ind : indices)
             {
                 mo->index(ind);
@@ -155,6 +168,11 @@ void SemanticMapDisplay::updateVisual()
 
         if (show_labels_property_->getBool())
         {
+            if (!std::isfinite(obj.position.x) || !std::isfinite(obj.position.y))
+            {
+                ROS_WARN_STREAM("Invalid position detected");
+                continue;
+            }
             //Ogre::ColourValue col(glasbey[cind][0] / 255.0, glasbey[cind][1] / 255.0, glasbey[cind][2] / 255.0);
             //cind++;
             hypermap::MovableText *mo_txt = new hypermap::MovableText(obj.name, "Liberation Sans", 0.3/*, col*/);
