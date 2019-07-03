@@ -5,6 +5,7 @@
     <description>
       Displays hypermap.
     </description>
+    <message_type>hypermap_msgs/HypermapMetaData</message_type>
   </class>
   <class name="hypermap/SemanticMap"
          type="hypermap::SemanticMapDisplay"
@@ -12,5 +13,6 @@
     <description>
       Displays semantic map.
     </description>
+    <message_type>hypermap_msgs/SemanticMap</message_type>
   </class>
 </library>
