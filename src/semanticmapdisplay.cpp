@@ -39,17 +39,19 @@ PLUGINLIB_EXPORT_CLASS(hypermap::SemanticMapDisplay, rviz::Display)
 namespace hypermap
 {
 
-SemanticMapDisplay::SemanticMapDisplay() : rviz::Display()
+SemanticMapDisplay::SemanticMapDisplay() : rviz::Display(), loaded_(false)
 {
     topic_property_ = new rviz::RosTopicProperty("Topic", "", ros::message_traits::datatype<hypermap_msgs::SemanticMap>(),
                                                  "hypermap_msgs::SemanticMap topic to subscribe to.", this, SLOT(updateTopic()));
 
     show_polygons_property_ = new rviz::BoolProperty("Show shapes", true, "Display shapes of semantic objects", this);
     show_labels_property_ = new rviz::BoolProperty("Show labels", true, "Display names of semantic objects", this);
+    char_height_property_ = new rviz::FloatProperty("Char height", 0.3, "Char height for labels", this);
 
     connect(this, SIGNAL(mapReceived()), this, SLOT(updateVisual()));
     connect(show_polygons_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
     connect(show_labels_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
+    connect(char_height_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
 }
 
 void SemanticMapDisplay::setTopic(const QString &topic, const QString &datatype)
@@ -59,8 +61,30 @@ void SemanticMapDisplay::setTopic(const QString &topic, const QString &datatype)
 
 void SemanticMapDisplay::updateTopic()
 {
+    unsubscribe();
+    clearVisual();
+    subscribe();
+}
+
+void SemanticMapDisplay::subscribe()
+{
+    if (!isEnabled())
+        return;
+
     map_sub_.shutdown();
-    map_sub_ = update_nh_.subscribe(topic_property_->getTopicStd(), 1, &SemanticMapDisplay::receiveMap, this);
+
+    if(!topic_property_->getTopic().isEmpty())
+    {
+        try
+        {
+            map_sub_ = update_nh_.subscribe(topic_property_->getTopicStd(), 1, &SemanticMapDisplay::receiveMap, this);
+            setStatus(rviz::StatusProperty::Ok, "Topic", "OK");
+        }
+        catch (ros::Exception &e)
+        {
+            setStatus(rviz::StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
+        }
+    }
 
     /*Ogre::ManualObject *mo = scene_manager_->createManualObject("test");
 
@@ -83,6 +107,24 @@ void SemanticMapDisplay::updateTopic()
     scene_node_->addChild(po);*/
 }
 
+void SemanticMapDisplay::unsubscribe()
+{
+    map_sub_.shutdown();
+    loaded_ = false;
+    setStatus(rviz::StatusProperty::Warn, "Message", "No map received");
+}
+
+void SemanticMapDisplay::onEnable()
+{
+    subscribe();
+}
+
+void SemanticMapDisplay::onDisable()
+{
+    unsubscribe();
+    clearVisual();
+}
+
 void SemanticMapDisplay::updateTransform()
 {
     Ogre::Vector3 position;
@@ -96,10 +138,20 @@ void SemanticMapDisplay::updateTransform()
     scene_node_->setOrientation(orientation);
 }
 
-void SemanticMapDisplay::updateVisual()
+void SemanticMapDisplay::clearVisual()
 {
     scene_node_->detachAllObjects();
     scene_node_->removeAndDestroyAllChildren();
+}
+
+void SemanticMapDisplay::updateVisual()
+{
+    clearVisual();
+
+    if (!loaded_)
+    {
+        return;
+    }
 
     /*Ogre::ManualObject *mob = scene_manager_->createManualObject("test");
 
@@ -175,7 +227,7 @@ void SemanticMapDisplay::updateVisual()
             }
             //Ogre::ColourValue col(glasbey[cind][0] / 255.0, glasbey[cind][1] / 255.0, glasbey[cind][2] / 255.0);
             //cind++;
-            hypermap::MovableText *mo_txt = new hypermap::MovableText(obj.name, "Liberation Sans", 0.3/*, col*/);
+            hypermap::MovableText *mo_txt = new hypermap::MovableText(obj.name, "Liberation Sans", char_height_property_->getFloat()/*, col*/);
             mo_txt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
             mo_txt->setLocalTranslation(Ogre::Vector3(obj.position.x, obj.position.y, 0));
             mo_txt->showOnTop();
@@ -192,7 +244,8 @@ void SemanticMapDisplay::fixedFrameChanged()
 void SemanticMapDisplay::receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& msg)
 {
     current_map_ = *msg;
-
+    loaded_ = true;
+    setStatus(rviz::StatusProperty::Ok, "Message", "Map received");
     Q_EMIT mapReceived();
 }
 

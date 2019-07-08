@@ -3,6 +3,9 @@
 
 #include "rviz/display.h"
 #include "rviz/properties/ros_topic_property.h"
+#include "rviz/properties/bool_property.h"
+#include "rviz/properties/float_property.h"
+#include "rviz/properties/status_property.h"
 #include "hypermap_msgs/SemanticMap.h"
 
 namespace hypermap {
@@ -15,6 +18,8 @@ public:
 
   virtual void setTopic(const QString &topic, const QString &datatype);
   virtual void fixedFrameChanged();
+  virtual void onEnable();
+  virtual void onDisable();
 
 Q_SIGNALS:
   void mapReceived();
@@ -26,13 +31,18 @@ protected Q_SLOTS:
 protected:
   void receiveMap(const hypermap_msgs::SemanticMap::ConstPtr& msg);
   void updateTransform();
+  void subscribe();
+  void unsubscribe();
+  void clearVisual();
 
   rviz::RosTopicProperty *topic_property_;
   rviz::BoolProperty *show_polygons_property_;
   rviz::BoolProperty *show_labels_property_;
+  rviz::FloatProperty *char_height_property_;
 
   hypermap_msgs::SemanticMap current_map_;
   ros::Subscriber map_sub_;
+  bool loaded_;
 };
 
 }
