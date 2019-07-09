@@ -200,7 +200,7 @@ void SemanticMapDisplay::updateVisual()
             std::vector<std::vector<geometry_msgs::Point32>> pg;
             pg.push_back(obj.shape.points);
             std::vector<uint32_t> indices = mapbox::earcut(pg);
-            ROS_INFO_STREAM("Inds : " << indices.size());
+            //ROS_INFO_STREAM("Inds : " << indices.size());
             Ogre::ManualObject *mo = scene_manager_->createManualObject();
             //Ogre::ColourValue col(glasbey[cind][0] / 255.0, glasbey[cind][1] / 255.0, glasbey[cind][2] / 255.0);
             //cind = (cind + 1) % 256;
@@ -221,7 +221,7 @@ void SemanticMapDisplay::updateVisual()
                 }
                 mo->position(point.x, point.y, 0);
                 mo->colour(col);
-                ROS_INFO_STREAM("Point added: " <<  point.x << ", " << point.y);
+                //ROS_INFO_STREAM("Point added: " <<  point.x << ", " << point.y);
             }
             if (!shape_valid)
             {
@@ -234,6 +234,10 @@ void SemanticMapDisplay::updateVisual()
                 mo->index(ind);
             }
             mo->end();
+            //double mo_prio = 1.0 / mo->getBoundingRadius();
+            //ROS_INFO_STREAM("Prio: " << mo_prio);
+            //ushort mo_prio_sh = (ushort)(mo_prio * 1000);
+            //mo->setRenderQueueGroupAndPriority(0, mo_prio_sh);
             scene_node_->attachObject(mo);
         }
 
@@ -250,6 +254,7 @@ void SemanticMapDisplay::updateVisual()
             mo_txt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
             mo_txt->setLocalTranslation(Ogre::Vector3(obj.position.x, obj.position.y, 0));
             mo_txt->showOnTop();
+            //mo_txt->setRenderQueueGroup(1);
             scene_node_->attachObject(mo_txt);
         }
     }
