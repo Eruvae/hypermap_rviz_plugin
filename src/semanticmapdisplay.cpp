@@ -47,6 +47,7 @@ SemanticMapDisplay::SemanticMapDisplay() : rviz::Display(), loaded_(false)
     show_polygons_property_ = new rviz::BoolProperty("Show shapes", true, "Display shapes of semantic objects", this);
     show_labels_property_ = new rviz::BoolProperty("Show labels", true, "Display names of semantic objects", this);
     char_height_property_ = new rviz::FloatProperty("Char height", 0.3, "Char height for labels", this);
+    show_classes_property_ = new rviz::Property("Select classes", QVariant(), "Change which classes are shown", this);
 
     connect(this, SIGNAL(mapReceived()), this, SLOT(updateVisual()));
     connect(show_polygons_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
@@ -63,6 +64,8 @@ void SemanticMapDisplay::updateTopic()
 {
     unsubscribe();
     clearVisual();
+    class_list_.clear();
+    show_classes_property_->removeChildren();
     subscribe();
 }
 
@@ -174,10 +177,24 @@ void SemanticMapDisplay::updateVisual()
     //std::default_random_engine generator;
     //std::uniform_real_distribution<float> distribution(0.0,1.0);
 
-    uint8_t cind = 2;
+    //uint8_t cind = 2;
 
     for (const auto &obj : current_map_.objects)
     {
+        auto c_it = class_list_.find(obj.name);
+        if (c_it == class_list_.end())
+        {
+            rviz::BoolProperty *prop = new rviz::BoolProperty(QString::fromStdString(obj.name), true, "Show class", show_classes_property_);
+            std::tie(c_it, std::ignore) = class_list_.insert(std::make_pair(obj.name, class_list_.size()));
+            connect(prop, SIGNAL(changed()), this, SLOT(updateVisual()));
+        }
+        else
+        {
+            rviz::BoolProperty *prop = (BoolProperty*) show_classes_property_->childAt(c_it->second);
+            if (!prop->getBool())
+                continue;
+        }
+
         if (show_polygons_property_->getBool())
         {
             std::vector<std::vector<geometry_msgs::Point32>> pg;
@@ -185,8 +202,10 @@ void SemanticMapDisplay::updateVisual()
             std::vector<uint32_t> indices = mapbox::earcut(pg);
             ROS_INFO_STREAM("Inds : " << indices.size());
             Ogre::ManualObject *mo = scene_manager_->createManualObject();
+            //Ogre::ColourValue col(glasbey[cind][0] / 255.0, glasbey[cind][1] / 255.0, glasbey[cind][2] / 255.0);
+            //cind = (cind + 1) % 256;
+            uint8_t cind = (2 + c_it->second) % 256;
             Ogre::ColourValue col(glasbey[cind][0] / 255.0, glasbey[cind][1] / 255.0, glasbey[cind][2] / 255.0);
-            cind++;
 
             mo->estimateVertexCount(obj.shape.points.size());
             mo->estimateIndexCount(indices.size());
