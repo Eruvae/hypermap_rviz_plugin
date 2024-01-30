@@ -87,4 +87,4 @@ void HypermapDisplay::receiveMapMeta(const hypermap_msgs::msg::HypermapMetaData:
 
 } // namespace hypermap
 
-//PLUGINLIB_EXPORT_CLASS(hypermap::HypermapDisplay, rviz_common::Display)
+PLUGINLIB_EXPORT_CLASS(hypermap::HypermapDisplay, rviz_common::Display)

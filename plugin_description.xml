@@ -1,12 +1,12 @@
 <library path="hypermap_rviz_plugin">
-  <!--class name="hypermap/Hypermap"
+  <class name="hypermap/Hypermap"
          type="hypermap::HypermapDisplay"
          base_class_type="rviz_common::Display">
     <description>
       Displays hypermap.
     </description>
     <message_type>hypermap_msgs/msg/HypermapMetaData</message_type>
-  </class-->
+  </class>
   <class name="hypermap/SemanticMap"
          type="hypermap::SemanticMapDisplay"
          base_class_type="rviz_common::Display">

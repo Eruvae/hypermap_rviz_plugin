@@ -18,7 +18,9 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets)
 set(CMAKE_AUTOMOC ON)
 
 add_library(${PROJECT_NAME} SHARED
-  #src/hypermapdisplay.cpp
+  include/hypermap_rviz_plugin/hypermapdisplay.h
+  src/hypermapdisplay.cpp
+  include/hypermap_rviz_plugin/semanticmapdisplay.h
   src/semanticmapdisplay.cpp
 )
 
