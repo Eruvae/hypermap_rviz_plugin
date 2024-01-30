@@ -22,6 +22,7 @@ add_library(${PROJECT_NAME} SHARED
   src/hypermapdisplay.cpp
   include/hypermap_rviz_plugin/semanticmapdisplay.h
   src/semanticmapdisplay.cpp
+  src/movable_text.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} ${QT_LIBRARIES})

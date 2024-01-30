@@ -11,7 +11,7 @@
 
 #include "hypermap_rviz_plugin/earcut.hpp"
 #include "hypermap_rviz_plugin/glasbey.h"
-#include "rviz_rendering/objects/movable_text.hpp"
+#include "hypermap_rviz_plugin/movable_text.hpp"
 
 namespace mapbox {
 namespace util {
@@ -130,10 +130,10 @@ void SemanticMapDisplay::updateTransform()
 {
     Ogre::Vector3 position;
     Ogre::Quaternion orientation;
-    if(!context_->getFrameManager()->getTransform(current_map_.header.frame_id, rclcpp::Time(0), position, orientation))
+    /*if(!context_->getFrameManager()->getTransform(current_map_.header.frame_id, rclcpp::Time(0), position, orientation))
     {
         //ROS_DEBUG("Error transforming from frame '%s' to frame '%s'", current_map_.header.frame_id.c_str(), qPrintable(fixed_frame_));
-    }
+    }*/
 
     scene_node_->setPosition(position);
     scene_node_->setOrientation(orientation);
@@ -165,8 +165,8 @@ void SemanticMapDisplay::updateVisual()
 
     scene_node_->attachObject(mob);*/
 
-    /*rviz_rendering::MovableText *testTxt = new rviz_rendering::MovableText("test text", "Liberation Sans", 0.3);
-    testTxt->setTextAlignment(rviz_rendering::MovableText::H_CENTER, rviz_rendering::MovableText::V_CENTER);
+    /*hypermap::MovableText *testTxt = new hypermap::MovableText("test text", "Liberation Sans", 0.3);
+    testTxt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
     testTxt->setGlobalTranslation(Ogre::Vector3(3, 4, 5));
     scene_node_->attachObject(testTxt);*/
 
@@ -248,8 +248,8 @@ void SemanticMapDisplay::updateVisual()
             }
             //Ogre::ColourValue col(glasbey[cind][0] / 255.0, glasbey[cind][1] / 255.0, glasbey[cind][2] / 255.0);
             //cind++;
-            rviz_rendering::MovableText *mo_txt = new rviz_rendering::MovableText(obj.name, "Liberation Sans", char_height_property_->getFloat()/*, col*/);
-            mo_txt->setTextAlignment(rviz_rendering::MovableText::H_CENTER, rviz_rendering::MovableText::V_CENTER);
+            hypermap::MovableText *mo_txt = new hypermap::MovableText(obj.name, "Liberation Sans", char_height_property_->getFloat()/*, col*/);
+            mo_txt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
             mo_txt->setLocalTranslation(Ogre::Vector3(obj.position.x, obj.position.y, 0));
             mo_txt->showOnTop();
             //mo_txt->setRenderQueueGroup(1);
