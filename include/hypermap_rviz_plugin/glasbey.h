@@ -1,5 +1,4 @@
-#ifndef GLASBEY_H
-#define GLASBEY_H
+#pragma once
 
 const int glasbey[256][3] = {{255,255,255},
                              {0,0,255},
@@ -257,5 +256,3 @@ const int glasbey[256][3] = {{255,255,255},
                              {126,130,72},
                              {58,6,101},
                              {189,117,101}};
-
-#endif // GLASBEY_H

@@ -1,18 +1,18 @@
-<library path="lib/libhypermap_rviz_plugin">
-  <class name="hypermap/Hypermap"
+<library path="hypermap_rviz_plugin">
+  <!--class name="hypermap/Hypermap"
          type="hypermap::HypermapDisplay"
-         base_class_type="rviz::Display">
+         base_class_type="rviz_common::Display">
     <description>
       Displays hypermap.
     </description>
-    <message_type>hypermap_msgs/HypermapMetaData</message_type>
-  </class>
+    <message_type>hypermap_msgs/msg/HypermapMetaData</message_type>
+  </class-->
   <class name="hypermap/SemanticMap"
          type="hypermap::SemanticMapDisplay"
-         base_class_type="rviz::Display">
+         base_class_type="rviz_common::Display">
     <description>
       Displays semantic map.
     </description>
-    <message_type>hypermap_msgs/SemanticMap</message_type>
+    <message_type>hypermap_msgs/msg/SemanticMap</message_type>
   </class>
 </library>

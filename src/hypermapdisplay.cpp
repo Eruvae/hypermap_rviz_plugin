@@ -1,25 +1,23 @@
-#include "hypermapdisplay.h"
+#include "hypermap_rviz_plugin/hypermapdisplay.h"
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <iostream>
 #include <OgreImage.h>
 #include <OgreManualObject.h>
 
-#include "nav_msgs/OccupancyGrid.h"
-#include "hypermap_msgs/SemanticMap.h"
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <hypermap_msgs/msg/semantic_map.hpp>
 
-#include "rviz/default_plugin/map_display.h"
-#include "semanticmapdisplay.h"
-
-PLUGINLIB_EXPORT_CLASS(hypermap::HypermapDisplay, rviz::Display)
+#include <rviz_default_plugins/displays/map/map_display.hpp>
+#include "hypermap_rviz_plugin/semanticmapdisplay.h"
 
 namespace hypermap
 {
 
-HypermapDisplay::HypermapDisplay() : rviz::DisplayGroup()
+HypermapDisplay::HypermapDisplay() : rviz_common::DisplayGroup()
 {
-    topic_property_ = new rviz::RosTopicProperty("Topic", "", ros::message_traits::datatype<hypermap_msgs::HypermapMetaData>(),
-                                                 "hypermap_msgs::HypermapMetaData topic to subscribe to.", this, SLOT(updateTopic()));
+    topic_property_ = new rviz_common::properties::RosTopicProperty("Topic", "", rosidl_generator_traits::data_type<hypermap_msgs::msg::HypermapMetaData>(),
+                                                 "hypermap_msgs::msg::HypermapMetaData topic to subscribe to.", this, SLOT(updateTopic()));
 
     connect(this, SIGNAL(mapReceived()), this, SLOT(updateLayerProps()));
 }
@@ -31,8 +29,9 @@ void HypermapDisplay::setTopic(const QString &topic, const QString &datatype)
 
 void HypermapDisplay::updateTopic()
 {
-    map_sub_.shutdown();
-    map_sub_ = update_nh_.subscribe(topic_property_->getTopicStd(), 1, &HypermapDisplay::receiveMapMeta, this);
+    map_sub_.reset();
+    auto rviz_ros_node_ = context_->getRosNodeAbstraction().lock();
+    map_sub_ = rviz_ros_node_->get_raw_node()->create_subscription<hypermap_msgs::msg::HypermapMetaData>(topic_property_->getTopicStd(), 1, std::bind(&HypermapDisplay::receiveMapMeta, this, std::placeholders::_1));
 }
 
 QString HypermapDisplay::getDisplayName(const std::string &layerClass)
@@ -58,9 +57,9 @@ QString HypermapDisplay::getTopicName(const std::string &layerClass, const std::
 QString HypermapDisplay::getTopicType(const std::string &layerClass)
 {
     if (layerClass == "OccupancyGridLayer")
-        return ros::message_traits::datatype<nav_msgs::OccupancyGrid>();
+        return rosidl_generator_traits::data_type<nav_msgs::msg::OccupancyGrid>();
     else if (layerClass == "SemanticLayer")
-        return ros::message_traits::datatype<hypermap_msgs::SemanticMap>();
+        return rosidl_generator_traits::data_type<hypermap_msgs::msg::SemanticMap>();
     else
         return QString::fromStdString(layerClass) + QStringLiteral(" is not a valid layer class");
 }
@@ -68,7 +67,7 @@ QString HypermapDisplay::getTopicType(const std::string &layerClass)
 void HypermapDisplay::updateLayerProps()
 {
     removeAllDisplays();
-    for (const hypermap_msgs::LayerMetaData &layerMeta : current_map_meta_.layers)
+    for (const hypermap_msgs::msg::LayerMetaData &layerMeta : current_map_meta_.layers)
     {
         Display *disp = createDisplay(getDisplayName(layerMeta.class_name));
         addDisplay(disp);
@@ -79,11 +78,13 @@ void HypermapDisplay::updateLayerProps()
     }
 }
 
-void HypermapDisplay::receiveMapMeta(const hypermap_msgs::HypermapMetaData::ConstPtr& msg)
+void HypermapDisplay::receiveMapMeta(const hypermap_msgs::msg::HypermapMetaData::ConstSharedPtr &msg)
 {
     current_map_meta_ = *msg;
-    ROS_INFO("Map meta received");
+    //RCLCPP_INFO(node->get_logger(), "Map meta received");
     Q_EMIT mapReceived();
 }
 
-}
+} // namespace hypermap
+
+//PLUGINLIB_EXPORT_CLASS(hypermap::HypermapDisplay, rviz_common::Display)
