@@ -3,6 +3,7 @@ import yaml
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
 from hypermap_msgs.msg import SemanticMap, SemanticObject
 from geometry_msgs.msg import Point32, Point
@@ -18,7 +19,7 @@ class SemanticMapPublisher(Node):
 
     def __init__(self, semantic_map_file):
         super().__init__('semantic_map_publisher')
-        self.publisher_ = self.create_publisher(SemanticMap, 'semantic_map', 1)
+        self.publisher_ = self.create_publisher(SemanticMap, 'semantic_map', QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL))
         msg = self.read_semantic_map(semantic_map_file)
         self.publish_map(msg)
 
