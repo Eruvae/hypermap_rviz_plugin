@@ -514,11 +514,13 @@ void MovableText::getWorldTransforms(Ogre::Matrix4 * xform) const
 {
   if (this->isVisible() && mCamera) {
     Ogre::Matrix3 rot3x3, scale3x3 = Ogre::Matrix3::IDENTITY;
+    Ogre::Matrix3 parentRot3x3;
 
     mCamera->getDerivedOrientation().ToRotationMatrix(rot3x3);
+    mParentNode->_getDerivedOrientation().ToRotationMatrix(parentRot3x3);
 
     Ogre::Vector3 parent_position = mParentNode->_getDerivedPosition() + global_translation_;
-    parent_position += rot3x3 * local_translation_;
+    parent_position += parentRot3x3 * local_translation_;
 
     scale3x3[0][0] = mParentNode->_getDerivedScale().x / 2;
     scale3x3[1][1] = mParentNode->_getDerivedScale().y / 2;
