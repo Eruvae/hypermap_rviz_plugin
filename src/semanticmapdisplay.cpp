@@ -36,11 +36,8 @@ struct nth<1, geometry_msgs::msg::Point32> {
 namespace hypermap
 {
 
-SemanticMapDisplay::SemanticMapDisplay() : rviz_common::Display(), loaded_(false)
+SemanticMapDisplay::SemanticMapDisplay() : rviz_common::RosTopicDisplay<hypermap_msgs::msg::SemanticMap>(), loaded_(false)
 {
-    topic_property_ = new rviz_common::properties::RosTopicProperty("Topic", "", rosidl_generator_traits::data_type<hypermap_msgs::msg::SemanticMap>(),
-                                                 "hypermap_msgs::msg::SemanticMap topic to subscribe to.", this, SLOT(updateTopic()));
-
     show_polygons_property_ = new rviz_common::properties::BoolProperty("Show shapes", true, "Display shapes of semantic objects", this);
     show_labels_property_ = new rviz_common::properties::BoolProperty("Show labels", true, "Display names of semantic objects", this);
     char_height_property_ = new rviz_common::properties::FloatProperty("Char height", 0.3, "Char height for labels", this);
@@ -50,69 +47,6 @@ SemanticMapDisplay::SemanticMapDisplay() : rviz_common::Display(), loaded_(false
     connect(show_polygons_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
     connect(show_labels_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
     connect(char_height_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
-}
-
-void SemanticMapDisplay::setTopic(const QString &topic, const QString &datatype)
-{
-    topic_property_->setString(topic);
-}
-
-void SemanticMapDisplay::updateTopic()
-{
-    unsubscribe();
-    clearVisual();
-    class_list_.clear();
-    show_classes_property_->removeChildren();
-    subscribe();
-}
-
-void SemanticMapDisplay::subscribe()
-{
-    if (!isEnabled())
-        return;
-
-    map_sub_.reset();
-
-    if(!topic_property_->getTopic().isEmpty())
-    {
-        try
-        {
-            auto rviz_ros_node_ = context_->getRosNodeAbstraction().lock();
-            map_sub_ = rviz_ros_node_->get_raw_node()->create_subscription<hypermap_msgs::msg::SemanticMap>(topic_property_->getTopicStd(), 1, std::bind(&SemanticMapDisplay::receiveMap, this, std::placeholders::_1));
-            setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", "OK");
-        }
-        catch (std::runtime_error &e)
-        {
-            setStatus(rviz_common::properties::StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
-        }
-    }
-
-    /*Ogre::ManualObject *mo = scene_manager_->createManualObject("test");
-
-    mo->begin("BaseWhite", Ogre::RenderOperation::OT_TRIANGLE_FAN);
-    mo->position(0,0,0);
-    mo->position(1,0,0);
-    mo->position(1,1,0);
-    mo->position(0,1,0);
-    mo->end();
-
-    scene_node_->attachObject(mo);*/
-
-    /*Ogre::Polygon *po = new Ogre::Polygon();
-
-    po->insertVertex(Ogre::Vector3(0, 0, 0));
-    po->insertVertex(Ogre::Vector3(0, 2, 0));
-    po->insertVertex(Ogre::Vector3(2, 2, 0));
-    po->insertVertex(Ogre::Vector3(2, 0, 0));
-
-    scene_node_->addChild(po);*/
-}
-
-void SemanticMapDisplay::unsubscribe()
-{
-    map_sub_.reset();
-    loaded_ = false;
-    setStatus(rviz_common::properties::StatusProperty::Warn, "Message", "No map received");
 }
 
 void SemanticMapDisplay::onEnable()
@@ -263,7 +197,7 @@ void SemanticMapDisplay::fixedFrameChanged()
     updateTransform();
 }
 
-void SemanticMapDisplay::receiveMap(const hypermap_msgs::msg::SemanticMap::ConstSharedPtr &msg)
+void SemanticMapDisplay::processMessage(hypermap_msgs::msg::SemanticMap::ConstSharedPtr msg)
 {
     current_map_ = *msg;
     loaded_ = true;

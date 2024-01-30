@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 
-#include <rviz_common/display.hpp>
+#include <rviz_common/ros_topic_display.hpp>
 #include <rviz_common/properties/ros_topic_property.hpp>
 #include <rviz_common/properties/bool_property.hpp>
 #include <rviz_common/properties/float_property.hpp>
@@ -12,13 +12,12 @@
 
 namespace hypermap {
 
-class SemanticMapDisplay : public rviz_common::Display
+class SemanticMapDisplay : public rviz_common::RosTopicDisplay<hypermap_msgs::msg::SemanticMap>
 {
 Q_OBJECT
 public:
   SemanticMapDisplay();
 
-  virtual void setTopic(const QString &topic, const QString &datatype);
   virtual void fixedFrameChanged();
   virtual void onEnable();
   virtual void onDisable();
@@ -27,17 +26,13 @@ Q_SIGNALS:
   void mapReceived();
 
 protected Q_SLOTS:
-  void updateTopic();
   void updateVisual();
 
 protected:
-  void receiveMap(const hypermap_msgs::msg::SemanticMap::ConstSharedPtr &msg);
+  void processMessage(hypermap_msgs::msg::SemanticMap::ConstSharedPtr msg) override;
   void updateTransform();
-  void subscribe();
-  void unsubscribe();
   void clearVisual();
 
-  rviz_common::properties::RosTopicProperty *topic_property_;
   rviz_common::properties::BoolProperty *show_polygons_property_;
   rviz_common::properties::BoolProperty *show_labels_property_;
   rviz_common::properties::FloatProperty *char_height_property_;
