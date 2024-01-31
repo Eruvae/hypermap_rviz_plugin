@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 
-#include <rviz_common/ros_topic_display.hpp>
+#include <rviz_common/message_filter_display.hpp>
 #include <rviz_common/properties/ros_topic_property.hpp>
 #include <rviz_common/properties/bool_property.hpp>
 #include <rviz_common/properties/float_property.hpp>
@@ -12,15 +12,13 @@
 
 namespace hypermap {
 
-class SemanticMapDisplay : public rviz_common::RosTopicDisplay<hypermap_msgs::msg::SemanticMap>
+class SemanticMapDisplay : public rviz_common::MessageFilterDisplay<hypermap_msgs::msg::SemanticMap>
 {
 Q_OBJECT
 public:
   SemanticMapDisplay();
 
-  virtual void fixedFrameChanged();
-  virtual void onEnable();
-  virtual void onDisable();
+  void reset() override;
 
 Q_SIGNALS:
   void mapReceived();
@@ -30,7 +28,6 @@ protected Q_SLOTS:
 
 protected:
   void processMessage(hypermap_msgs::msg::SemanticMap::ConstSharedPtr msg) override;
-  void updateTransform();
   void clearVisual();
 
   rviz_common::properties::BoolProperty *show_polygons_property_;

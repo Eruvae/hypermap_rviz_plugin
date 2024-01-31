@@ -36,7 +36,7 @@ struct nth<1, geometry_msgs::msg::Point32> {
 namespace hypermap
 {
 
-SemanticMapDisplay::SemanticMapDisplay() : rviz_common::RosTopicDisplay<hypermap_msgs::msg::SemanticMap>(), loaded_(false)
+SemanticMapDisplay::SemanticMapDisplay() : rviz_common::MessageFilterDisplay<hypermap_msgs::msg::SemanticMap>(), loaded_(false)
 {
     show_polygons_property_ = new rviz_common::properties::BoolProperty("Show shapes", true, "Display shapes of semantic objects", this);
     show_labels_property_ = new rviz_common::properties::BoolProperty("Show labels", true, "Display names of semantic objects", this);
@@ -49,28 +49,10 @@ SemanticMapDisplay::SemanticMapDisplay() : rviz_common::RosTopicDisplay<hypermap
     connect(char_height_property_, SIGNAL(changed()), this, SLOT(updateVisual()));
 }
 
-void SemanticMapDisplay::onEnable()
+void SemanticMapDisplay::reset()
 {
-    subscribe();
-}
-
-void SemanticMapDisplay::onDisable()
-{
-    unsubscribe();
+    rviz_common::MessageFilterDisplay<hypermap_msgs::msg::SemanticMap>::reset();
     clearVisual();
-}
-
-void SemanticMapDisplay::updateTransform()
-{
-    Ogre::Vector3 position;
-    Ogre::Quaternion orientation;
-    /*if(!context_->getFrameManager()->getTransform(current_map_.header.frame_id, rclcpp::Time(0), position, orientation))
-    {
-        //ROS_DEBUG("Error transforming from frame '%s' to frame '%s'", current_map_.header.frame_id.c_str(), qPrintable(fixed_frame_));
-    }*/
-
-    scene_node_->setPosition(position);
-    scene_node_->setOrientation(orientation);
 }
 
 void SemanticMapDisplay::clearVisual()
@@ -87,29 +69,6 @@ void SemanticMapDisplay::updateVisual()
     {
         return;
     }
-
-    /*Ogre::ManualObject *mob = scene_manager_->createManualObject("test");
-
-    mob->begin("BaseWhite", Ogre::RenderOperation::OT_TRIANGLE_FAN);
-    mob->position(0,0,0);
-    mob->position(1,0,0);
-    mob->position(1,1,0);
-    mob->position(0,1,0);
-    mob->end();
-
-    scene_node_->attachObject(mob);*/
-
-    /*hypermap::MovableText *testTxt = new hypermap::MovableText("test text", "Liberation Sans", 0.3);
-    testTxt->setTextAlignment(hypermap::MovableText::H_CENTER, hypermap::MovableText::V_CENTER);
-    testTxt->setGlobalTranslation(Ogre::Vector3(3, 4, 5));
-    scene_node_->attachObject(testTxt);*/
-
-    updateTransform();
-
-    //std::default_random_engine generator;
-    //std::uniform_real_distribution<float> distribution(0.0,1.0);
-
-    //uint8_t cind = 2;
 
     for (const auto &obj : current_map_.objects)
     {
@@ -192,16 +151,17 @@ void SemanticMapDisplay::updateVisual()
     }
 }
 
-void SemanticMapDisplay::fixedFrameChanged()
-{
-    updateTransform();
-}
-
 void SemanticMapDisplay::processMessage(hypermap_msgs::msg::SemanticMap::ConstSharedPtr msg)
 {
     current_map_ = *msg;
     loaded_ = true;
-    setStatus(rviz_common::properties::StatusProperty::Ok, "Message", "Map received");
+    //setStatus(rviz_common::properties::StatusProperty::Ok, "Message", "Map received");
+    rclcpp::Time msg_time(msg->header.stamp, RCL_ROS_TIME);
+    if (!updateFrame(msg->header.frame_id, msg_time)) {
+        setMissingTransformToFixedFrame(msg->header.frame_id);
+        return;
+    }
+    setTransformOk();
     Q_EMIT mapReceived();
 }
 
