@@ -3,25 +3,19 @@ import yaml
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, QoSDurabilityPolicy
+#from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
 from hypermap_msgs.msg import SemanticMap, SemanticObject
 from geometry_msgs.msg import Point32, Point
-
-#int32 id
-#geometry_msgs/Polygon shape
-#geometry_msgs/Point position # should be centroid of shape
-#string name
-#string[] tags
-#float64[] confidence
 
 class SemanticMapPublisher(Node):
 
     def __init__(self, semantic_map_file):
         super().__init__('semantic_map_publisher')
-        self.publisher_ = self.create_publisher(SemanticMap, 'semantic_map', QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL))
-        msg = self.read_semantic_map(semantic_map_file)
-        self.publish_map(msg)
+        #latched: QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
+        self.publisher_ = self.create_publisher(SemanticMap, 'semantic_map', 1)
+        self.msg = self.read_semantic_map(semantic_map_file)
+        self.timer = self.create_timer(1.0, self.publish_map)
 
     def read_semantic_map(self, semantic_map_file):
         msg = SemanticMap()
@@ -58,10 +52,10 @@ class SemanticMapPublisher(Node):
 
         return msg
 
-    def publish_map(self, msg):
-        msg.header.frame_id = "map"
-        msg.header.stamp = self.get_clock().now().to_msg()
-        self.publisher_.publish(msg)
+    def publish_map(self):
+        self.msg.header.frame_id = "map"
+        self.msg.header.stamp = self.get_clock().now().to_msg()
+        self.publisher_.publish(self.msg)
 
 
 def main(args=None):
@@ -75,9 +69,6 @@ def main(args=None):
 
     rclpy.spin(semantic_map_publisher)
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
     semantic_map_publisher.destroy_node()
     rclpy.shutdown()
 
